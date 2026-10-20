@@ -1,0 +1,6 @@
+{
+  "name": "Alex: Voice AI Mock Interviewer",
+  "description": "Live voice-first mock technical and behavioral interviews with Alex, an expert hiring manager specializing in Gen AI and system design.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
