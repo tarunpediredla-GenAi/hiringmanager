@@ -20,9 +20,9 @@ interface CandidateTileProps {
 }
 
 const QUICK_STARTERS = [
-  "I'd partition the system into an ingestion pipeline with hierarchical chunking, a Redis semantic cache, and an HNSW vector index.",
-  "Let's focus on latency first: we can use a hybrid search with BM25 plus dense vectors, followed by a fast cross-encoder reranker.",
-  "For multi-tenancy, I'd isolate index partitions by tenant ID and implement speculative decoding to achieve sub-200ms P99 latency.",
+  "React sends the question to Django. Django runs an SQL query in PostgreSQL to get document text and sends it to the AI model.",
+  "When users upload a big PDF, Django runs a background Celery task with Redis so the React website stays fast and never blocks.",
+  "In React, we use a simple streaming connection to show the AI answer word by word on the screen for the user.",
 ];
 
 export const CandidateTile: React.FC<CandidateTileProps> = ({
@@ -117,7 +117,7 @@ export const CandidateTile: React.FC<CandidateTileProps> = ({
             <div className="flex items-center gap-1.5">
               <h3 className="font-semibold text-slate-100 text-xs md:text-sm tracking-wide">Candidate</h3>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 font-medium">
-                Senior SWE
+                Full Stack Python & Gen AI
               </span>
             </div>
           </div>

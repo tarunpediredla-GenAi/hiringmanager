@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Share2, Layers, Cpu, Database, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Share2, Layers, Cpu, Database, ShieldCheck, CheckCircle2, Code } from 'lucide-react';
 import { WhiteboardNode } from '../types/interview';
+import { FullStackPlayground } from './FullStackPlayground';
 
 interface WhiteboardProps {
   nodes: WhiteboardNode[];
@@ -12,53 +13,54 @@ interface WhiteboardProps {
   onShareWithAlex: () => void;
   isSharing: boolean;
   sharedSuccess: boolean;
+  onCodeChange?: (code: string) => void;
 }
 
 const PRESET_COMPONENTS = [
   {
-    label: 'API Gateway & Rate Limiter',
+    label: 'React 19 SPA (HTML/CSS/JS)',
     category: 'compute' as const,
-    description: 'Handles auth, token bucket rate limiting (1k RPS), and SSL termination.',
+    description: 'React frontend with Tailwind CSS, custom hooks, and Server-Sent Events (SSE) streaming chat state.',
   },
   {
-    label: 'Semantic Cache (Redis)',
-    category: 'cache' as const,
-    description: 'Cosine similarity threshold > 0.94 for instant cache hits (<15ms).',
+    label: 'Django REST Framework (DRF)',
+    category: 'compute' as const,
+    description: 'Python API endpoints with JWT auth, serializers, throttling, and Django AsyncStreamingHttpResponse.',
   },
   {
-    label: 'Ingestion & Chunking Pipeline',
+    label: 'Celery Worker & Redis Broker',
     category: 'ingestion' as const,
-    description: 'Hierarchical 512-token chunking with 64-token overlap, markdown-aware.',
+    description: 'Async task queue for non-blocking document ingestion, text chunking, and batch embedding calls.',
   },
   {
-    label: 'Embedding Service (Batch)',
-    category: 'compute' as const,
-    description: 'Batched inference on GPU worker cluster (BGE-Large / text-embedding-3).',
-  },
-  {
-    label: 'Vector DB (HNSW Index)',
+    label: 'PostgreSQL Database (SQL + pgvector)',
     category: 'storage' as const,
-    description: 'Milvus/Pinecone with HNSW (M=16, efConstruction=200), multi-tenant metadata filter.',
+    description: 'Relational schema with normalized tables, foreign keys, and pgvector HNSW index for vector cosine similarity.',
   },
   {
-    label: 'Hybrid Search & Reranker',
+    label: 'Redis Cache & Session Store',
+    category: 'cache' as const,
+    description: 'In-memory semantic cache (<5ms) for frequent queries, user session storage, and Celery task backend.',
+  },
+  {
+    label: 'Gemini LLM & Embeddings API',
     category: 'compute' as const,
-    description: 'BM25 sparse + dense vector fusion via RRF, top-50 reranked with Cross-Encoder.',
+    description: 'Embeddings generation, dynamic prompt engineering with system instructions, and real-time token streaming.',
   },
   {
-    label: 'LLM Cluster (vLLM / Speculative)',
+    label: 'Hybrid Search (SQL Full-Text + pgvector)',
     category: 'compute' as const,
-    description: 'Continuous batching, speculative decoding with draft model, streaming responses.',
+    description: 'Combines PostgreSQL tsvector BM25 keyword matching with dense embedding similarity using Reciprocal Rank Fusion.',
   },
   {
-    label: 'Prompt Guardrails & Safety Filter',
+    label: 'Guardrails & SQL Injection Filter',
     category: 'eval' as const,
-    description: 'Input jailbreak defense, PII masking, and output hallucination filter.',
+    description: 'Django ORM parameterized query protection, prompt jailbreak filters, and PII masking.',
   },
   {
-    label: 'Eval & Telemetry (Langfuse/OTel)',
+    label: 'Observability (Django Silk & Langfuse)',
     category: 'eval' as const,
-    description: 'Traces token latency (TTFT), RAG Triad scores (faithfulness, relevancy).',
+    description: 'Profiles SQL query execution count (detects N+1 queries), Celery queue lag, and LLM token latency.',
   },
 ];
 
@@ -72,8 +74,9 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   onShareWithAlex,
   isSharing,
   sharedSuccess,
+  onCodeChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'components' | 'notes'>('components');
+  const [activeTab, setActiveTab] = useState<'components' | 'code' | 'notes'>('components');
   const [customLabel, setCustomLabel] = useState('');
   const [customDesc, setCustomDesc] = useState('');
   const [customCategory, setCustomCategory] = useState<'compute' | 'storage' | 'cache' | 'ingestion' | 'eval'>('compute');
@@ -110,34 +113,45 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
   return (
     <div className="flex flex-col h-full bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-indigo-400" />
-          <h3 className="font-semibold text-slate-100 text-sm">System Design Architecture Pad</h3>
+          <h3 className="font-semibold text-slate-100 text-sm">Full Stack Architecture & Code Studio</h3>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Tabs */}
-          <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs">
+          <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-xs">
             <button
               onClick={() => setActiveTab('components')}
-              className={`px-3 py-1 rounded-md transition ${
+              className={`px-3 py-1 rounded-lg transition font-medium ${
                 activeTab === 'components'
-                  ? 'bg-indigo-600 text-white font-medium shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Components ({nodes.length})
+              Architecture ({nodes.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('code')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition font-medium ${
+                activeTab === 'code'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Code className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Full Stack Code & SQL</span>
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`px-3 py-1 rounded-md transition ${
+              className={`px-3 py-1 rounded-lg transition font-medium ${
                 activeTab === 'notes'
-                  ? 'bg-indigo-600 text-white font-medium shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Technical Specs & Notes
+              Specs & Notes
             </button>
           </div>
 
@@ -150,7 +164,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
                 ? 'bg-emerald-600 text-white'
                 : 'bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white'
             }`}
-            title="Alex will evaluate your whiteboard choices in his next drill-down question"
+            title="Alex will evaluate your whiteboard choices and code in his next drill-down question"
           >
             {sharedSuccess ? (
               <>
@@ -169,7 +183,9 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {activeTab === 'components' ? (
+        {activeTab === 'code' ? (
+          <FullStackPlayground onCodeChange={onCodeChange} />
+        ) : activeTab === 'components' ? (
           <div>
             {/* Quick Add Presets Bar */}
             <div className="mb-4">

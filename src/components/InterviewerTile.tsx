@@ -61,7 +61,7 @@ export const InterviewerTile: React.FC<InterviewerTileProps> = ({
                 Interviewer
               </span>
             </div>
-            <p className="text-xs text-slate-400">Gen AI & Systems Hiring Committee</p>
+            <p className="text-xs text-slate-400">Senior Full Stack Python Developer with Gen AI</p>
           </div>
         </div>
 
@@ -170,11 +170,11 @@ export const InterviewerTile: React.FC<InterviewerTileProps> = ({
             className="text-xs bg-slate-800/90 text-slate-300 rounded-lg px-2.5 py-1.5 border border-slate-700 hover:border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
             title="Alex's voice model"
           >
-            <option value="Fenrir">Voice: Fenrir (Natural / Authoritative)</option>
-            <option value="Puck">Voice: Puck (Warm / Conversational)</option>
-            <option value="Zephyr">Voice: Zephyr (Crisp / Analytical)</option>
-            <option value="Kore">Voice: Kore (Clear / Professional)</option>
-            <option value="Charon">Voice: Charon (Deep / Measured)</option>
+            <option value="Puck">Voice: Puck (Friendly & Clear - Recommended)</option>
+            <option value="Fenrir">Voice: Fenrir (Senior & Calm)</option>
+            <option value="Kore">Voice: Kore (Gentle & Simple)</option>
+            <option value="Zephyr">Voice: Zephyr (Direct & Clear)</option>
+            <option value="Charon">Voice: Charon (Deep & Slow)</option>
           </select>
 
           {/* Speed selector */}
@@ -184,10 +184,10 @@ export const InterviewerTile: React.FC<InterviewerTileProps> = ({
             className="text-xs bg-slate-800/90 text-slate-300 rounded-lg px-2 py-1.5 border border-slate-700 hover:border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer font-mono"
             title="Alex's speaking speed"
           >
-            <option value={0.82}>Speed: 0.82x (Very Slow)</option>
-            <option value={0.88}>Speed: 0.88x (Calm & Slow)</option>
-            <option value={0.94}>Speed: 0.94x (Natural Relaxed)</option>
-            <option value={1.0}>Speed: 1.0x (Standard)</option>
+            <option value={0.80}>Speed: 0.80x (Slow & Clear)</option>
+            <option value={0.85}>Speed: 0.85x (Easy to Listen)</option>
+            <option value={0.92}>Speed: 0.92x (Moderate)</option>
+            <option value={1.0}>Speed: 1.0x (Normal)</option>
           </select>
 
           {onReplayAudio && (

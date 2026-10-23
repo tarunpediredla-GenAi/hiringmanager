@@ -41,10 +41,10 @@ interface UseVoiceOptions {
 export function useVoice({
   onCandidateSpeechSubmit,
   autoSendAfterSilenceMs = 2200,
-  voiceName = 'Fenrir',
-  initialSpeechRate = 0.88,
+  voiceName = 'Puck',
+  initialSpeechRate = 0.82,
 }: UseVoiceOptions = {}) {
-  // Speech Rate state (e.g. 0.85 = slower, 1.0 = normal)
+  // Speech Rate state (e.g. 0.82 = slower & clear, 1.0 = normal)
   const [speechRate, setSpeechRate] = useState<number>(initialSpeechRate);
 
   // Speech Recognition state
@@ -393,11 +393,25 @@ export function useVoice({
     utterance.pitch = 0.95;
 
     const voices = window.speechSynthesis.getVoices();
-    const naturalVoice = voices.find(
+    // Prioritize Indian English (en-IN) voices for clear, familiar pronunciation
+    const indianVoice = voices.find(
       (v) =>
-        v.lang.startsWith('en') &&
-        (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Alex') || v.name.includes('Daniel'))
-    ) || voices.find((v) => v.lang.startsWith('en'));
+        v.lang === 'en-IN' ||
+        v.lang.startsWith('en-IN') ||
+        v.name.includes('India') ||
+        v.name.includes('Heera') ||
+        v.name.includes('Ravi') ||
+        v.name.includes('Neerja')
+    );
+
+    const naturalVoice =
+      indianVoice ||
+      voices.find(
+        (v) =>
+          v.lang.startsWith('en') &&
+          (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Alex') || v.name.includes('Daniel'))
+      ) ||
+      voices.find((v) => v.lang.startsWith('en'));
 
     if (naturalVoice) utterance.voice = naturalVoice;
 

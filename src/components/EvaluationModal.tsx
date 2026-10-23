@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Award, CheckCircle, AlertTriangle, BookOpen, RotateCcw, Download } from 'lucide-react';
+import { X, Award, CheckCircle, AlertTriangle, BookOpen, RotateCcw, Download, CloudUpload, Check } from 'lucide-react';
 import { EvaluationResult } from '../types/interview';
 
 interface EvaluationModalProps {
@@ -8,6 +8,11 @@ interface EvaluationModalProps {
   result: EvaluationResult | null;
   isLoading: boolean;
   onRestart: () => void;
+  onSaveToFirebase?: () => void;
+  isSavingToFirebase?: boolean;
+  saveSuccess?: boolean;
+  isAuthenticated?: boolean;
+  onPromptSignIn?: () => void;
 }
 
 export const EvaluationModal: React.FC<EvaluationModalProps> = ({
@@ -16,6 +21,11 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
   result,
   isLoading,
   onRestart,
+  onSaveToFirebase,
+  isSavingToFirebase,
+  saveSuccess,
+  isAuthenticated,
+  onPromptSignIn,
 }) => {
   if (!isOpen) return null;
 
@@ -38,7 +48,7 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({
     if (!result) return;
     const reportText = `=========================================
 ALEX MOCK INTERVIEW EVALUATION DEBRIEF
-Target Role: Senior Software Engineer (Generative AI)
+Target Role: Senior Full Stack Python Developer with Gen AI (HTML, CSS, JS, React, SQL, Django, Gen AI)
 =========================================
 Decision: ${result.hiringDecision} (Score: ${result.overallScore}/100)
 
@@ -83,7 +93,7 @@ ${result.detailedActionableAdvice}
                 Hiring Committee Evaluation Debrief
               </h2>
               <p className="text-xs text-slate-400">
-                Calibrated assessment for Gen AI Senior Software Engineer
+                Calibrated assessment for Senior Full Stack Python Developer with Gen AI
               </p>
             </div>
           </div>
@@ -245,7 +255,31 @@ ${result.detailedActionableAdvice}
 
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/80">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {onSaveToFirebase && (
+              <button
+                onClick={isAuthenticated ? onSaveToFirebase : onPromptSignIn}
+                disabled={!result || isLoading || isSavingToFirebase}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                  saveSuccess
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                } disabled:opacity-50 shadow-md`}
+                title="Save interview session, whiteboard diagram, and scorecard to Firestore"
+              >
+                {saveSuccess ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    Saved to Firebase!
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload className="h-3.5 w-3.5" />
+                    {isSavingToFirebase ? 'Saving...' : isAuthenticated ? 'Save to Firebase' : 'Sign in to Save'}
+                  </>
+                )}
+              </button>
+            )}
             <button
               onClick={handleDownloadReport}
               disabled={!result || isLoading}
@@ -256,10 +290,10 @@ ${result.detailedActionableAdvice}
             </button>
             <button
               onClick={onRestart}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              Start New Mock Interview
+              New Interview
             </button>
           </div>
 

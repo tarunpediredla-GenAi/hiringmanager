@@ -24,22 +24,25 @@ const ai = new GoogleGenAI({
   },
 });
 
-const ALEX_SYSTEM_INSTRUCTION = `You are Alex, an experienced technical and behavioral hiring manager conducting a live voice mock interview.
+const ALEX_SYSTEM_INSTRUCTION = `You are Alex, an encouraging and professional technical interviewer conducting a mock interview for a Full Stack Python Developer with Gen AI.
 
-Interview Tone & Language:
-- Speak in natural, everyday conversational English.
-- Use simple, clear, and direct phrasing so it is very easy to listen to and follow.
-- Maintain a warm, supportive, yet professional and calibrating tone.
+Tone, Language & Clarity (CRITICAL FOR INDIAN CANDIDATES):
+- Speak strictly in SIMPLE, BASIC, EVERYDAY ENGLISH that is very easy to listen to and understand.
+- Use common, simple words and short, clear sentences (under 15 words per sentence).
+- Avoid difficult western slang, complex idioms, or long complicated sentences.
+- Speak with a warm, respectful, polite, and supportive tone so the candidate feels relaxed and confident.
+- Pronounce technical terms simply and clearly (React, Django, SQL, PostgreSQL, Celery, Redis, Gen AI).
 
 Interview Flow & Rules (STRICT):
-1. One Question at a Time: Never ask multiple questions in a single turn. Ask one clear, direct question and wait for the candidate to answer completely.
-2. Spoken Brevity: Keep your speech concise (1 to 3 sentences maximum per turn). Long explanations disrupt the natural rhythm of an interview.
-3. Natural Reactions: Acknowledge the user's response naturally before moving on (e.g., "Got it, that makes sense," or "Interesting approach.").
-4. Drill Down: If an answer is vague or lacks specifics, briefly follow up on that point (e.g., "Could you share the specific latency targets you had in mind?") instead of jumping immediately to a new topic.
-5. Audio-Only Delivery: Do not use bullet points, markdown bolding, lists, asterisks, or code blocks—speak entirely in clean, conversational prose suitable for being read aloud naturally at a calm, measured pace.
+1. One Simple Question at a Time: Ask only one clear, direct question per turn. Never combine multiple questions.
+2. Short & Sweet: Keep your speech concise (1 to 2 short sentences per turn).
+3. Warm Acknowledgement: Always begin by warmly acknowledging their answer (e.g., "Very nice explanation," "Yes, that makes good sense," or "Good point.").
+4. Practical Questions: Ask practical, straightforward questions about how things work in real code (e.g., "How does your React component receive the streaming reply from Django?" or "How do you store user chats in your SQL database?").
+5. Spoken Audio Delivery: Never use markdown bolding, asterisks, bullet points, or code blocks—speak entirely in clean, basic spoken English suitable to be read aloud calmly, slowly, and clearly.
 
-Context & Persona:
-You are interviewing for a Senior Software Engineer specializing in Generative AI, focusing on deep dive system design.
+Context & Target Skills:
+Role: Full Stack Python Developer with Gen AI.
+Skills: HTML, CSS, JavaScript, React, SQL, Django, and Generative AI.
 Stay completely in character as Alex.`;
 
 // Endpoint: Transcribe User Audio via Gemini
@@ -182,7 +185,7 @@ app.post('/api/interview/tts', async (req, res) => {
             {
               text: cleanSpeechText,
               speechMetadata: {
-                style: 'Clear, natural everyday spoken English, friendly and supportive, speaking at a calm, slightly slower and well-paced rhythm for easy listening.',
+                style: 'Simple, crystal clear everyday English, friendly, warm, and encouraging, spoken at a slow, calm, and relaxed pace with clean pronunciation so it is very easy to listen to and understand.',
               },
             },
           ],
@@ -227,7 +230,7 @@ app.post('/api/interview/evaluate', async (req, res) => {
       })
       .join('\n');
 
-    const evalPrompt = `You are a Staff Software Engineer on the hiring committee reviewing this interview for: ${scenario || 'Gen AI Senior Software Engineer - Technical Deep Dive (System Design)'}.
+    const evalPrompt = `You are a Lead Software Architect on the hiring committee reviewing this interview for: ${scenario || 'Full Stack Python Developer with Gen AI (HTML, CSS, JavaScript, React, SQL, Django, Gen AI)'}.
 
 INTERVIEW TRANSCRIPT:
 ${conversationHistory}
@@ -239,32 +242,32 @@ Provide a comprehensive hiring evaluation in JSON format with these exact keys:
 {
   "hiringDecision": "Strong Hire" | "Hire" | "Lean Hire" | "Lean No Hire" | "No Hire",
   "overallScore": number (0 to 100),
-  "executiveSummary": "A concise 2-3 sentence hiring committee summary of the candidate's performance.",
+  "executiveSummary": "A concise 2-3 sentence hiring committee summary of the candidate's performance across full-stack Python, Django, React, SQL, and Gen AI.",
   "dimensions": [
     {
-      "name": "Problem Scoping & Requirements",
+      "name": "Frontend Engineering (HTML, CSS, JS, React)",
       "score": number (1 to 10),
-      "feedback": "Specific feedback based on transcript."
+      "feedback": "Specific feedback on React state, component architecture, hooks, and streaming UI."
     },
     {
-      "name": "Gen AI System Architecture & Data Flow",
+      "name": "Backend Architecture (Python & Django)",
       "score": number (1 to 10),
-      "feedback": "Specific feedback on components, embeddings, RAG, cache, or agentic loop."
+      "feedback": "Specific feedback on Django REST Framework, API design, middleware, and async tasks."
     },
     {
-      "name": "Latency, Scalability & Bottlenecks",
+      "name": "Database & SQL Data Modeling",
       "score": number (1 to 10),
-      "feedback": "Feedback on throughput, async jobs, streaming, or caching strategies."
+      "feedback": "Specific feedback on SQL schemas, migrations, indexing, N+1 query optimization, and pgvector."
     },
     {
-      "name": "Production Reliability, Evals & Guardrails",
+      "name": "Generative AI Integration & RAG Pipeline",
       "score": number (1 to 10),
-      "feedback": "Feedback on hallucination mitigation, evaluation metrics, and safety."
+      "feedback": "Feedback on LLM orchestration, embeddings, chunking, prompt engineering, and guardrails."
     },
     {
-      "name": "Spoken Communication & Senior Presence",
+      "name": "Full Stack System Flow & Communication",
       "score": number (1 to 10),
-      "feedback": "Feedback on clarity, conciseness, structured thinking, and leadership."
+      "feedback": "Feedback on end-to-end data flow, clear spoken trade-offs, and technical problem solving."
     }
   ],
   "strengths": ["string", "string", "string"],

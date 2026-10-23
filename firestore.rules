@@ -1,0 +1,101 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net: Default-deny all unmapped paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Connectivity verification probe document (read-only for health checks)
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.uid == userId &&
+             data.email is string &&
+             data.email.size() <= 254 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidInterviewSession(data, userId, sessionId) {
+      return data.id == sessionId &&
+             data.userId == userId &&
+             data.scenario is string &&
+             data.scenario.size() > 0 &&
+             data.scenario.size() <= 200 &&
+             (!('overallScore' in data) || data.overallScore is number) &&
+             (!('hiringDecision' in data) || (data.hiringDecision is string && data.hiringDecision.size() <= 50)) &&
+             (!('durationSeconds' in data) || data.durationSeconds is number) &&
+             (!('messagesCount' in data) || data.messagesCount is number) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidInterviewDetail(data, userId, sessionId) {
+      return data.id == sessionId &&
+             data.userId == userId &&
+             (!('messages' in data) || data.messages is list) &&
+             (!('whiteboardNodes' in data) || data.whiteboardNodes is list) &&
+             (!('architectureNotes' in data) || (data.architectureNotes is string && data.architectureNotes.size() <= 50000)) &&
+             (!('evaluationResult' in data) || data.evaluationResult is map) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    // User Profile Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // Blanket user listing forbidden for privacy
+      allow delete: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().uid == existing().uid;
+
+      // Subcollection: Interview Sessions List
+      match /sessions/{sessionId} {
+        allow get, list, delete: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(sessionId) &&
+                         isValidInterviewSession(incoming(), userId, sessionId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(sessionId) &&
+                         isValidInterviewSession(incoming(), userId, sessionId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().id == existing().id;
+      }
+
+      // Subcollection: Full Interview Details (Transcripts, Diagram, Evaluation)
+      match /session_details/{sessionId} {
+        allow get, list, delete: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(sessionId) &&
+                         isValidInterviewDetail(incoming(), userId, sessionId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(sessionId) &&
+                         isValidInterviewDetail(incoming(), userId, sessionId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().id == existing().id;
+      }
+    }
+  }
+}

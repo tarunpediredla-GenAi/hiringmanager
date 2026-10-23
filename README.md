@@ -1,26 +1,26 @@
-# 🎙️ Alex: Voice AI Mock Interviewer
+# 🎙️ Alex: Full Stack Python Developer & Gen AI Mock Interviewer
 
-> **Live, voice-first AI technical & behavioral hiring manager conducting interactive system design mock interviews with real-time audio and rubric-based debriefs.**
+> **Live, voice-first AI technical & architecture hiring manager conducting interactive mock interviews for Full Stack Python Developers with Gen AI across HTML, CSS, JavaScript, React, SQL, Django, and LLM pipelines.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.0-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Express](https://img.shields.io/badge/Express-4.21-000000?logo=express&logoColor=white)](https://expressjs.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![SQL](https://img.shields.io/badge/SQL-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Google%20Gemini-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 
 ---
 
 ## 🌟 Overview
 
-**Alex** is an executive-level technical hiring manager and tech lead designed to simulate high-stakes **Generative AI and Senior Software Engineering system design interviews**.
+**Alex** is an executive-level technical hiring manager and tech lead designed to simulate high-stakes interviews for **Full Stack Python Developers with Gen AI**.
 
-Unlike typical text-heavy chatbots, Alex delivers a **true voice-to-voice interview experience**:
-- **Spoken Brevity**: Keeps spoken turns concise (1 to 3 sentences maximum), maintaining the natural cadence of a real interview.
-- **Normal Everyday English**: Speaks in clear, everyday conversational English at a calm, measured pace (adjustable speed: 0.8x – 1.0x) so complex technical questions are easy to absorb.
-- **Dual-Channel Voice Capture**: Uses browser **Web Speech API** for instant interim transcripts, with an automatic **Gemini Audio Transcription (`gemini-3.5-transcribe`)** fallback via `MediaRecorder` for 100% microphone reliability across any browser or iframe.
-- **Interactive Architecture Whiteboard**: Candidates can drag and drop Generative AI system components (*API Gateways, Semantic Caches, HNSW Vector DBs, Speculative Decoders, Rerankers, Guardrails*) and sync their design directly with Alex.
-- **Hiring Committee Scorecard**: Conclude the session at any time to receive a calibrated FAANG-level hiring committee evaluation (*Strong Hire, Hire, Lean Hire, etc.*) complete with dimensional grading, strengths, gaps, and study recommendations.
+Alex evaluates candidates across the full end-to-end modern stack:
+- **Frontend**: HTML5, CSS3, modern JavaScript, and React (state management, hooks, Server-Sent Events for streaming tokens).
+- **Backend & APIs**: Python with Django and Django REST Framework (DRF), Celery asynchronous workers, and Redis task queues.
+- **Data & SQL**: Relational database architecture (PostgreSQL), schema migrations, query optimization (N+1 query elimination), and pgvector for semantic vector embeddings.
+- **Generative AI**: LLM orchestration, embedding generation, RAG document pipelines, prompt guardrails, and real-time streaming inference.
 
 ---
 
@@ -101,6 +101,19 @@ Unlike typical text-heavy chatbots, Alex delivers a **true voice-to-voice interv
 - **Specific Strengths & Critical Gaps**.
 - **Recommended Readings & Topics** (e.g., *HNSW vs IVF-PQ*, *RAGTriad Evals*, *Speculative Decoding Mechanics*).
 - **Export Debrief**: Download a full interview report as `.txt` for offline study.
+
+### 5. 💡 System Design Tips & Playbook (Floating Action Button)
+- **Floating Action Button (FAB)**: Quick-access floating trigger in the bottom corner of the screen.
+- **The 4-Step Staff SWE Formula**: Structured pacing guide (*5m Scoping → 10m High-Level Flow → 15m Deep Dive → 5m Resilience*).
+- **Golden Clarifying Questions**: High-impact questions to ask Alex (*Scale, Peak QPS, Latency SLA / P99 TTFT, Index Freshness, Multi-tenancy Isolation*). Includes 1-click **"Ask Alex Now"** injection and copy-to-clipboard.
+- **Sizing & SLA Cheat Sheet**: Real-world back-of-the-envelope calculations for token economics, vector memory footprint, and ANN search latencies.
+- **Common Pitfalls & Traps**: Side-by-side examples of fatal interview mistakes versus senior engineering approaches.
+
+### 6. 🔥 Firebase Authentication & Cloud Firestore Persistence
+- **Google Sign-In**: Quick 1-click Google authentication via popup.
+- **Cloud Firestore Persistence**: Save and archive completed mock interview transcripts, whiteboard diagrams, and scorecards to your personal account.
+- **"Past Interviews" History Drawer**: Revisit past interviews, track score progression over time, reload previous architecture diagrams, and review Alex's detailed feedback.
+- **Zero-Trust Security Rules**: Strict attribute-based access control (ABAC) in `firestore.rules` guaranteeing isolated candidate access.
 
 ---
 

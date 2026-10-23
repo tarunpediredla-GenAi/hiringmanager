@@ -16,24 +16,24 @@ interface SettingsModalProps {
 
 const SCENARIOS = [
   {
-    id: 'gen-ai-system-design',
-    title: 'Gen AI Senior SWE: System Design Deep Dive',
-    description: 'Enterprise multi-tenant RAG, vector indexes, semantic caching, token economics, and low-latency serving.',
+    id: 'fullstack-python-genai',
+    title: 'Full Stack Python Developer with Gen AI (React, Django, SQL, Gen AI)',
+    description: 'End-to-end full stack architecture: React SPA, Django REST API, PostgreSQL/SQL with pgvector, Celery async workers, and streaming LLM responses.',
   },
   {
-    id: 'gen-ai-agents',
-    title: 'Gen AI Senior SWE: Agentic Systems & Tool Calling',
-    description: 'Autonomous multi-agent loops, state management, tool execution, cyclic failure recovery, and guardrails.',
+    id: 'django-react-realtime',
+    title: 'Django REST Framework & React: Real-Time API Architecture',
+    description: 'RESTful endpoints, JWT auth, Server-Sent Events (SSE) streaming, optimistic UI updates, CORS, and Django ORM query optimization.',
   },
   {
-    id: 'gen-ai-inference-opt',
-    title: 'Gen AI Senior SWE: Model Serving & Latency Optimization',
-    description: 'Continuous batching, vLLM / TensorRT, speculative decoding, KV-cache paging, and GPU cluster scaling.',
+    id: 'sql-pgvector-rag',
+    title: 'SQL Database Architecture & pgvector RAG Pipeline',
+    description: 'Relational data modeling, foreign key constraints, B-tree vs HNSW indexes, N+1 query elimination, and chunk embedding storage in PostgreSQL.',
   },
   {
-    id: 'behavioral-leadership',
-    title: 'Senior SWE Behavioral: Tech Leadership & Trade-offs',
-    description: 'Resolving architecture deadlocks, critical production incident triage, and cross-functional influence.',
+    id: 'fullstack-leadership',
+    title: 'Full Stack Python Senior SWE: System Design & Trade-Offs',
+    description: 'Architecting scalable multi-tier web apps, Redis caching, Celery task distribution, rate limiting, and cost-effective Gen AI token management.',
   },
 ];
 
@@ -116,11 +116,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[
-                { name: 'Fenrir', desc: 'Authoritative / Senior' },
-                { name: 'Puck', desc: 'Conversational / Warm' },
-                { name: 'Zephyr', desc: 'Crisp / Direct' },
-                { name: 'Kore', desc: 'Clear / Articulate' },
-                { name: 'Charon', desc: 'Deep / Steady' },
+                { name: 'Puck', desc: 'Friendly, warm, and clear (Recommended)' },
+                { name: 'Fenrir', desc: 'Calm and steady' },
+                { name: 'Kore', desc: 'Gentle and simple' },
+                { name: 'Zephyr', desc: 'Direct and crisp' },
+                { name: 'Charon', desc: 'Deep and slow' },
               ].map((v) => (
                 <button
                   key={v.name}
@@ -142,17 +142,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Sliders className="h-3.5 w-3.5" /> Speaking Pace (Normal English / Slow)
+                <Sliders className="h-3.5 w-3.5" /> Speaking Pace (Slow & Clear English)
               </label>
               <span className="text-xs font-mono text-indigo-400">
-                {speechRate <= 0.85 ? `${speechRate}x (Slow & Deliberate)` : speechRate <= 0.92 ? `${speechRate}x (Recommended Calm)` : `${speechRate}x (Standard)`}
+                {speechRate <= 0.82 ? `${speechRate}x (Slow & Very Clear)` : speechRate <= 0.88 ? `${speechRate}x (Recommended Calm)` : `${speechRate}x (Standard)`}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <input
                 type="range"
                 min={0.75}
-                max={1.1}
+                max={1.05}
                 step={0.05}
                 value={speechRate}
                 onChange={(e) => onChangeSpeechRate(Number(e.target.value))}
@@ -161,11 +161,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
               <span>0.75x Slower</span>
-              <span className="text-indigo-400 font-semibold">0.88x (Calm & Clear)</span>
-              <span>1.1x Faster</span>
+              <span className="text-indigo-400 font-semibold">0.82x (Clear & Easy to Understand)</span>
+              <span>1.05x Normal</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-              Alex speaks in natural, everyday conversational English at a measured pace so technical questions are easy to absorb.
+              Alex speaks in simple, basic English at a relaxed pace so questions are easy to hear and understand without rush.
             </p>
           </div>
 

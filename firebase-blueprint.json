@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Information about the registered candidate or user",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["uid", "email"]
+    },
+    "InterviewSession": {
+      "title": "Interview Session Summary",
+      "description": "Summary metadata of a candidate interview for the history list",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "scenario": { "type": "string", "maxLength": 200 },
+        "overallScore": { "type": "number" },
+        "hiringDecision": { "type": "string", "maxLength": 50 },
+        "durationSeconds": { "type": "number" },
+        "messagesCount": { "type": "number" },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "scenario", "createdAt"]
+    },
+    "InterviewDetail": {
+      "title": "Interview Session Detail",
+      "description": "Full conversation transcript, whiteboard diagram, and hiring committee debrief",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "messages": { "type": "array" },
+        "whiteboardNodes": { "type": "array" },
+        "architectureNotes": { "type": "string", "maxLength": 50000 },
+        "evaluationResult": { "type": "object" },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profile information, accessible only by the authenticated owner"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "InterviewSession",
+      "description": "Stores summary cards of candidate interview sessions"
+    },
+    "/users/{userId}/session_details/{sessionId}": {
+      "schema": "InterviewDetail",
+      "description": "Stores full session transcript, whiteboard architecture state, and evaluation results"
+    }
+  }
+}

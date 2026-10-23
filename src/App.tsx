@@ -10,6 +10,7 @@ import {
   Maximize2,
   Columns,
   Headphones,
+  Lightbulb,
 } from 'lucide-react';
 import { ChatMessage, EvaluationResult, InterviewStatus, LayoutMode, WhiteboardNode } from './types/interview';
 import { sendInterviewTurn, evaluateInterview } from './services/api';
@@ -20,24 +21,36 @@ import { Whiteboard } from './components/Whiteboard';
 import { TranscriptDrawer } from './components/TranscriptDrawer';
 import { EvaluationModal } from './components/EvaluationModal';
 import { SettingsModal } from './components/SettingsModal';
+import { SavedSessionsDrawer } from './components/SavedSessionsDrawer';
+import { TipsSidebar } from './components/TipsSidebar';
+import { auth, onAuthStateChanged, User } from './firebase/config';
+import {
+  loginWithGoogle,
+  logoutUser,
+  saveInterviewToFirestore,
+  fetchSessionDetail,
+  deleteSessionFromFirestore,
+  subscribeToUserSessions,
+  SavedSessionSummary,
+} from './firebase/firebaseService';
 
 const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: 'turn-1',
     role: 'alex',
-    text: "Hi there, I'm Alex. Great to meet you! What role are you targeting today, and are we focusing on behavioral or technical practice?",
+    text: "Hello! Welcome to the interview. I am Alex. Today we are talking about the Full Stack Python Developer with Gen AI role. To begin, please tell me simply about your experience with React, Django, SQL, and Gen AI.",
     timestamp: '00:00',
   },
   {
     id: 'turn-2',
     role: 'candidate',
-    text: 'Thanks, Alex. I am preparing for a gen ai Senior Software Engineer position and would like to start with a technical deep dive into system design.',
+    text: 'Hello Alex! I build full-stack web applications with React on the frontend and Django REST framework on the backend. I use PostgreSQL and SQL queries to save data, and I connect to AI models for document search and chatbot answers.',
     timestamp: '00:08',
   },
   {
     id: 'turn-3',
     role: 'alex',
-    text: "Awesome, let's dive into system design. Suppose we are architecting a multi-tenant enterprise RAG platform that needs to serve thousands of queries per second over proprietary document embeddings with sub-200 millisecond latency. How would you scope the primary architectural components from ingestion to query serving?",
+    text: "That sounds great! Suppose a user uploads a PDF file on the React website. How does Django receive this file, save it in PostgreSQL, and use Gen AI to answer questions about it?",
     timestamp: '00:15',
   },
 ];
@@ -45,25 +58,41 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 const INITIAL_NODES: WhiteboardNode[] = [
   {
     id: 'node-1',
-    label: 'API Gateway & Rate Limiter',
+    label: 'React 19 SPA (HTML/CSS/JS)',
     category: 'compute',
-    description: 'Handles token bucket rate limiting (2,500 RPS) and JWT auth.',
+    description: 'React frontend with Tailwind CSS, custom hooks, and Server-Sent Events (SSE) for real-time streaming LLM responses.',
     x: 0,
     y: 0,
   },
   {
     id: 'node-2',
-    label: 'Semantic Cache (Redis)',
-    category: 'cache',
-    description: 'Pre-computed embedding cosine similarity match (>0.94) to return instant cached responses in <15ms.',
+    label: 'Django REST API & Celery',
+    category: 'compute',
+    description: 'Django REST Framework (DRF) handling JWT auth, API endpoints, and Celery workers for async PDF parsing & embedding generation.',
     x: 0,
     y: 0,
   },
   {
     id: 'node-3',
-    label: 'Vector DB (HNSW Index)',
+    label: 'PostgreSQL Database (SQL + pgvector)',
     category: 'storage',
-    description: 'Milvus/Pinecone partitioned by tenant ID, M=16, efConstruction=200 for sub-20ms ANN search.',
+    description: 'Relational tables for users, documents, and chat history with pgvector HNSW index for sub-25ms semantic vector search.',
+    x: 0,
+    y: 0,
+  },
+  {
+    id: 'node-4',
+    label: 'Redis Cache & Celery Broker',
+    category: 'cache',
+    description: 'Message broker for async Celery task queues and semantic query caching (<5ms response time).',
+    x: 0,
+    y: 0,
+  },
+  {
+    id: 'node-5',
+    label: 'Gen AI & Embeddings Pipeline',
+    category: 'compute',
+    description: 'Google Gemini API for 768-dim embeddings, RAG context synthesis, and token streaming via Django Async views.',
     x: 0,
     y: 0,
   },
@@ -74,16 +103,16 @@ export default function App() {
   const [status, setStatus] = useState<InterviewStatus>('idle');
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('split');
   const [isMuted, setIsMuted] = useState(false);
-  const [voiceName, setVoiceName] = useState('Fenrir');
+  const [voiceName, setVoiceName] = useState('Puck');
   const [autoSendSilenceMs, setAutoSendSilenceMs] = useState(2200);
-  const [scenario, setScenario] = useState('Gen AI Senior SWE: System Design Deep Dive');
+  const [scenario, setScenario] = useState('Full Stack Python Developer with Gen AI (React, Django, SQL, Gen AI)');
   const [timerSeconds, setTimerSeconds] = useState(15);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
 
   // Whiteboard state
   const [whiteboardNodes, setWhiteboardNodes] = useState<WhiteboardNode[]>(INITIAL_NODES);
   const [architectureNotes, setArchitectureNotes] = useState(
-    '- QPS Peak: 2,500 queries/second\n- Latency Budget: P99 < 200ms (Embedding: 25ms, Vector search: 20ms, LLM TTFT: 80ms)\n- Cache: Redis Semantic Vector Cache\n- Failure Mode: Fallback to BM25 lexical search if vector service errors.'
+    '- Frontend: React 19, HTML5/CSS3, custom hooks, Server-Sent Events (SSE) for token streaming.\n- Backend: Python 3.12 + Django REST Framework (DRF), Celery + Redis for asynchronous PDF ingestion.\n- Database: PostgreSQL (SQL) with normalized schema, foreign keys, and pgvector extension for HNSW vector search.\n- Gen AI: 512-token chunking pipeline, Gemini embeddings, prompt templates with system guardrails, and streaming response delivery.'
   );
   const [isSharingWhiteboard, setIsSharingWhiteboard] = useState(false);
   const [sharedWhiteboardSuccess, setSharedWhiteboardSuccess] = useState(false);
@@ -91,17 +120,133 @@ export default function App() {
   // Modals
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTipsOpen, setIsTipsOpen] = useState(false);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+
+  // Firebase Auth & Firestore State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [savedSessions, setSavedSessions] = useState<SavedSessionSummary[]>([]);
+  const [isSavedSessionsOpen, setIsSavedSessionsOpen] = useState(false);
+  const [isSavingToFirebase, setIsSavingToFirebase] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLoadingSessionDetail, setIsLoadingSessionDetail] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Monitor Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Subscribe to real-time interview sessions in Firestore when user logged in
+  useEffect(() => {
+    if (!currentUser) {
+      setSavedSessions([]);
+      return;
+    }
+    const unsubscribe = subscribeToUserSessions(currentUser.uid, (data) => {
+      setSavedSessions(data);
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  const handleGoogleLogin = async () => {
+    setAuthError(null);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (err?.code === 'auth/popup-blocked') {
+        setAuthError('Sign-in popup was blocked by browser. Please allow popups for Google Sign-In.');
+      } else if (err?.code === 'auth/popup-closed-by-user') {
+        setAuthError('Sign-in popup was closed before completing.');
+      } else {
+        setAuthError(err?.message || 'Authentication error. Please try again.');
+      }
+      setTimeout(() => setAuthError(null), 5000);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setIsSavedSessionsOpen(false);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
+
+  const handleSaveToFirebase = async () => {
+    if (!currentUser) {
+      await handleGoogleLogin();
+      return;
+    }
+    setIsSavingToFirebase(true);
+    try {
+      await saveInterviewToFirestore(
+        currentUser.uid,
+        scenario,
+        timerSeconds,
+        messages,
+        whiteboardNodes,
+        architectureNotes,
+        evaluationResult
+      );
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to save interview to Firestore:', err);
+    } finally {
+      setIsSavingToFirebase(false);
+    }
+  };
+
+  const handleSelectSavedSession = async (sessionId: string) => {
+    if (!currentUser) return;
+    setIsLoadingSessionDetail(true);
+    try {
+      const detail = await fetchSessionDetail(currentUser.uid, sessionId);
+      if (detail) {
+        setMessages(detail.messages || []);
+        setWhiteboardNodes(detail.whiteboardNodes || []);
+        setArchitectureNotes(detail.architectureNotes || '');
+        setEvaluationResult(detail.evaluationResult);
+        setIsSavedSessionsOpen(false);
+        setIsEvalModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Failed to load session:', err);
+    } finally {
+      setIsLoadingSessionDetail(false);
+    }
+  };
+
+  const handleDeleteSavedSession = async (sessionId: string) => {
+    if (!currentUser) return;
+    try {
+      await deleteSessionFromFirestore(currentUser.uid, sessionId);
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+    }
+  };
+
+  const [fullStackCode, setFullStackCode] = useState(
+    'React fetch stream connected to Django REST Framework StreamingHttpResponse using PostgreSQL pgvector cosine similarity search.'
+  );
 
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
   const whiteboardContextString = React.useMemo(() => {
     const nodesSummary = whiteboardNodes.map((n) => `[${n.label}] (${n.category}): ${n.description}`).join('\n');
-    return `Components:\n${nodesSummary}\n\nTechnical Notes:\n${architectureNotes}`;
-  }, [whiteboardNodes, architectureNotes]);
+    return `Full Stack Architecture Components (React, Django, SQL, Gen AI):\n${nodesSummary}\n\nTechnical Notes:\n${architectureNotes}\n\nCode & Query Implementation (React, Django DRF, SQL pgvector):\n${fullStackCode}`;
+  }, [whiteboardNodes, architectureNotes, fullStackCode]);
 
   // Handle Candidate turn submission (voice or text)
   const handleCandidateSubmit = useCallback(
@@ -348,6 +493,16 @@ export default function App() {
             <span>Clarify SLA</span>
           </button>
 
+          {/* System Design Tips & Playbook Toggle */}
+          <button
+            onClick={() => setIsTipsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 hover:text-amber-200 transition"
+            title="System Design Interview Tips, Questions & Pitfalls"
+          >
+            <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Tips</span>
+          </button>
+
           {/* Settings */}
           <button
             onClick={() => setIsSettingsOpen(true)}
@@ -357,6 +512,23 @@ export default function App() {
             <SettingsIcon className="h-4 w-4" />
           </button>
 
+          {/* Past Interviews (Firebase Firestore) */}
+          {currentUser && (
+            <button
+              onClick={() => setIsSavedSessionsOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-700/60 text-indigo-200 transition"
+              title="View saved interview sessions in Firestore"
+            >
+              <Award className="h-3.5 w-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">Past Interviews</span>
+              {savedSessions.length > 0 && (
+                <span className="h-4 px-1.5 rounded-full bg-indigo-500 text-white font-mono text-[10px] flex items-center justify-center font-bold">
+                  {savedSessions.length}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* End Interview & Scorecard Button */}
           <button
             onClick={handleConcludeInterview}
@@ -365,8 +537,81 @@ export default function App() {
             <PhoneOff className="h-3.5 w-3.5" />
             <span>End & Debrief</span>
           </button>
+
+          {/* Google Auth Button / User Profile */}
+          {isAuthLoading ? (
+            <div className="h-7 w-7 rounded-xl bg-slate-800 animate-pulse" />
+          ) : currentUser ? (
+            <div className="flex items-center gap-2 pl-1 border-l border-slate-800">
+              <div className="flex items-center gap-1.5">
+                {currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={currentUser.displayName || 'User'}
+                    className="h-7 w-7 rounded-full border border-indigo-500/50"
+                  />
+                ) : (
+                  <div className="h-7 w-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                    {currentUser.displayName ? currentUser.displayName[0].toUpperCase() : 'U'}
+                  </div>
+                )}
+                <span className="hidden xl:inline text-xs font-medium text-slate-300 max-w-[90px] truncate">
+                  {currentUser.displayName || 'Candidate'}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 px-2 py-1 rounded-lg transition"
+                title="Sign out"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleGoogleLogin}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white transition font-medium shadow-sm"
+              title="Sign in with Google to save interview sessions in Firebase"
+            >
+              <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              <span className="hidden sm:inline">Sign In</span>
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Auth Error Notification Banner */}
+      {authError && (
+        <div className="bg-amber-950/90 border-b border-amber-600/70 px-4 py-2 text-xs text-amber-200 flex items-center justify-between z-30 shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+            <span>{authError}</span>
+          </div>
+          <button
+            onClick={() => setAuthError(null)}
+            className="text-amber-400 hover:text-white px-2 py-0.5 rounded transition font-bold text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Main Workspace */}
       <main className="flex-1 p-3 sm:p-4 md:p-5 overflow-hidden">
@@ -467,6 +712,7 @@ export default function App() {
                 onShareWithAlex={handleShareWhiteboard}
                 isSharing={isSharingWhiteboard}
                 sharedSuccess={sharedWhiteboardSuccess}
+                onCodeChange={setFullStackCode}
               />
             </div>
           </div>
@@ -504,6 +750,7 @@ export default function App() {
                 onShareWithAlex={handleShareWhiteboard}
                 isSharing={isSharingWhiteboard}
                 sharedSuccess={sharedWhiteboardSuccess}
+                onCodeChange={setFullStackCode}
               />
             </div>
           </div>
@@ -528,6 +775,21 @@ export default function App() {
         result={evaluationResult}
         isLoading={isEvaluating}
         onRestart={handleRestart}
+        onSaveToFirebase={handleSaveToFirebase}
+        isSavingToFirebase={isSavingToFirebase}
+        saveSuccess={saveSuccess}
+        isAuthenticated={!!currentUser}
+        onPromptSignIn={handleGoogleLogin}
+      />
+
+      {/* Saved Sessions Drawer (Firebase Firestore) */}
+      <SavedSessionsDrawer
+        isOpen={isSavedSessionsOpen}
+        onClose={() => setIsSavedSessionsOpen(false)}
+        sessions={savedSessions}
+        isLoading={isLoadingSessionDetail}
+        onSelectSession={handleSelectSavedSession}
+        onDeleteSession={handleDeleteSavedSession}
       />
 
       {/* Settings Modal */}
@@ -545,6 +807,27 @@ export default function App() {
         }}
         speechRate={speechRate}
         onChangeSpeechRate={setSpeechRate}
+      />
+
+      {/* Floating Action Button (FAB): System Design Tips */}
+      <button
+        onClick={() => setIsTipsOpen(true)}
+        className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold text-xs shadow-xl shadow-amber-500/30 border border-amber-200/50 transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
+        title="Open System Design Interview Playbook, Clarifying Questions & Pitfalls"
+      >
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-950 opacity-40"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-950"></span>
+        </span>
+        <Lightbulb className="h-4 w-4 text-slate-950 group-hover:rotate-12 transition-transform" />
+        <span className="tracking-wide">Tips & Playbook</span>
+      </button>
+
+      {/* System Design Tips & Clarifying Questions Sidebar */}
+      <TipsSidebar
+        isOpen={isTipsOpen}
+        onClose={() => setIsTipsOpen(false)}
+        onInjectQuestion={(q) => handleCandidateSubmit(q)}
       />
     </div>
   );
