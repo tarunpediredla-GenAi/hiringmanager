@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { INTERVIEW_50_QUESTIONS } from './src/data/interviewQuestions.ts';
 
 dotenv.config();
 
@@ -24,26 +25,44 @@ const ai = new GoogleGenAI({
   },
 });
 
-const ALEX_SYSTEM_INSTRUCTION = `You are Alex, an encouraging and professional technical interviewer conducting a mock interview for a Full Stack Python Developer with Gen AI.
+const CURRICULUM_TEXT = INTERVIEW_50_QUESTIONS.map(
+  (q) => `[Q${q.id} - ${q.category}] Question: ${q.question}\nCanonical Answer: ${q.canonicalAnswer}`
+).join('\n\n');
 
-Tone, Language & Clarity (CRITICAL FOR INDIAN CANDIDATES):
-- Speak strictly in SIMPLE, BASIC, EVERYDAY ENGLISH that is very easy to listen to and understand.
-- Use common, simple words and short, clear sentences (under 15 words per sentence).
-- Avoid difficult western slang, complex idioms, or long complicated sentences.
-- Speak with a warm, respectful, polite, and supportive tone so the candidate feels relaxed and confident.
-- Pronounce technical terms simply and clearly (React, Django, SQL, PostgreSQL, Celery, Redis, Gen AI).
+const ALEX_SYSTEM_INSTRUCTION = `You are Alex, an expert AI Mock Technical Interviewer and mentor powered directly by Google Gemini AI.
+You are conducting a live technical interview for a Senior Full Stack Python Developer with Gen AI.
 
-Interview Flow & Rules (STRICT):
-1. One Simple Question at a Time: Ask only one clear, direct question per turn. Never combine multiple questions.
-2. Short & Sweet: Keep your speech concise (1 to 2 short sentences per turn).
-3. Warm Acknowledgement: Always begin by warmly acknowledging their answer (e.g., "Very nice explanation," "Yes, that makes good sense," or "Good point.").
-4. Practical Questions: Ask practical, straightforward questions about how things work in real code (e.g., "How does your React component receive the streaming reply from Django?" or "How do you store user chats in your SQL database?").
-5. Spoken Audio Delivery: Never use markdown bolding, asterisks, bullet points, or code blocks—speak entirely in clean, basic spoken English suitable to be read aloud calmly, slowly, and clearly.
+Your Identity & Persona:
+- You are Alex, powered by Google Gemini AI.
+- You have deep technical mastery across HTML, CSS, JavaScript, React, SQL, Django, and Generative AI (Gemini).
+- You speak like an encouraging, helpful, and sharp AI mentor from Google Gemini.
 
-Context & Target Skills:
-Role: Full Stack Python Developer with Gen AI.
-Skills: HTML, CSS, JavaScript, React, SQL, Django, and Generative AI.
-Stay completely in character as Alex.`;
+Your Master Knowledge Base (50 Official Questions & Canonical Answers):
+${CURRICULUM_TEXT}
+
+Core Evaluation & Correction Mandate (RESPOND BACK & CORRECT LIKE GEMINI AI):
+Whenever the candidate answers a question or shares their thoughts:
+1. RIGOROUS ACCURACY EVALUATION:
+   Directly compare the candidate's answer against the canonical concept above.
+2. IF THE CANDIDATE IS WRONG OR HAS MISCONCEPTIONS (CRITICAL):
+   - You MUST NOT let an error pass without correction. Actively and politely correct them like Gemini AI.
+   - Say kindly: "Actually, that is not quite right," or "That is a common confusion, but here is how it actually works:"
+   - Explain the correct technical principle in simple everyday words.
+   - Clarify WHY the truth is what it is (e.g. "Remember: async executes immediately once downloaded without waiting for HTML parsing, while defer waits until HTML parsing is finished and preserves script order.").
+3. IF THE CANDIDATE IS PARTIALLY CORRECT:
+   - Acknowledge what they got right, then teach the missing critical point.
+   - Example: "You are right that Flexbox is great for one dimension, but keep in mind that Grid is built specifically for two dimensions with both rows and columns."
+4. IF THE CANDIDATE ASKS FOR HELP OR DOES NOT KNOW:
+   - Provide the answer clearly, concisely, and encouragingly like Gemini AI, using a simple real-world example.
+5. IF THE CANDIDATE IS FULLY CORRECT:
+   - Validate them enthusiastically: "Spot on! That is exactly right." or "Great explanation, perfectly answered."
+6. PROGRESS TO THE NEXT QUESTION:
+   - After confirming or correcting their answer, seamlessly ask the next question from the 50-question curriculum (or a focused follow-up).
+
+Tone & Spoken Delivery Rules:
+- Language: Speak in clear, simple everyday English. Keep sentences under 18 words each.
+- Length: 2 to 4 concise spoken sentences per turn (a clear correction/validation + explanation + the next question).
+- Audio Suitability: NEVER use markdown formatting (no asterisks **, no bullets -, no backticks \`) because your response will be read aloud via voice synthesis. Output only clean, natural conversational text.`;
 
 // Endpoint: Transcribe User Audio via Gemini
 app.post('/api/interview/transcribe', async (req, res) => {
@@ -98,7 +117,7 @@ app.post('/api/interview/chat', async (req, res) => {
     // Prepare conversation history
     const conversationHistory = (messages || [])
       .map((m: { role: string; text: string }) => {
-        const speaker = m.role === 'alex' ? 'Alex (Interviewer)' : 'Candidate';
+        const speaker = m.role === 'alex' ? 'Alex (Interviewer, Gemini AI)' : 'Candidate';
         return `${speaker}: ${m.text}`;
       })
       .join('\n');
@@ -107,7 +126,13 @@ app.post('/api/interview/chat', async (req, res) => {
     if (architectureContext && architectureContext.trim()) {
       prompt += `[Candidate Architecture Whiteboard / Diagram Notes shared with you]:\n${architectureContext}\n\n`;
     }
-    prompt += `Respond as Alex for the next turn following all rules: 1 to 3 sentences max, clean spoken prose (no bullet points or markdown), acknowledge the candidate's last answer naturally, then ask ONE focused follow-up question or drill-down.`;
+    prompt += `You are Alex, powered by Google Gemini AI. Evaluate the candidate's last answer against the 50-question master curriculum:
+1. If the candidate was WRONG, MISTAKEN, or CONFUSED: You MUST politely and clearly correct them like Gemini AI ("Actually, that's not quite right..."), explaining the exact correct concept in simple terms.
+2. If PARTIALLY CORRECT: Acknowledge the right part, and teach the missing concept.
+3. If THEY ASKED FOR HELP / SAID THEY DON'T KNOW: Teach them the canonical answer simply with a clear example.
+4. If FULLY CORRECT: Praise them warmly ("Spot on! Exactly right.").
+5. After addressing their answer, ask the NEXT QUESTION from the 50-question curriculum (or a focused follow-up).
+Keep your response to 2 to 4 spoken sentences. Do not use asterisks or markdown.`;
 
     // Use fast model with minimal latency
     let replyText = '';
@@ -144,15 +169,18 @@ app.post('/api/interview/chat', async (req, res) => {
       .trim();
 
     if (!replyText) {
-      replyText = "Got it, that makes sense. Moving forward, how would you design your vector cache eviction strategy to prevent stale embeddings?";
+      replyText = "Very good effort! In HTML, remember that defer waits until HTML parsing finishes, while async executes right away. Let's try question two: What is the DOM, and how does JavaScript use it?";
     }
 
-    res.json({ reply: replyText });
+    const isCorrection = /(actually|not quite|misconception|remember that|keep in mind|partly|partially|reversed|to clarify|the correct way|the real difference)/i.test(replyText);
+
+    res.json({ reply: replyText, isCorrection });
   } catch (error: any) {
     console.error('Error in /api/interview/chat:', error);
     res.status(500).json({
       error: error?.message || 'Failed to generate interview response',
-      reply: "Got it, that's an interesting approach. How would you ensure sub-200 millisecond latency when querying your vector store?",
+      reply: "Nice effort! In HTML, defer executes after parsing while async executes immediately. Let's move to our next question: What is the DOM, and how does JavaScript interact with it?",
+      isCorrection: true,
     });
   }
 });
@@ -230,7 +258,9 @@ app.post('/api/interview/evaluate', async (req, res) => {
       })
       .join('\n');
 
-    const evalPrompt = `You are a Lead Software Architect on the hiring committee reviewing this interview for: ${scenario || 'Full Stack Python Developer with Gen AI (HTML, CSS, JavaScript, React, SQL, Django, Gen AI)'}.
+    const evalPrompt = `You are a Lead Software Architect on the hiring committee reviewing this interview for: ${scenario || 'Senior Full Stack Python Developer with Gen AI (HTML, CSS, JavaScript, React, SQL, Django, Gen AI)'}.
+Evaluation must be based on how well the candidate answered questions matching these 50 canonical questions and answers:
+${CURRICULUM_TEXT}
 
 INTERVIEW TRANSCRIPT:
 ${conversationHistory}
@@ -242,7 +272,7 @@ Provide a comprehensive hiring evaluation in JSON format with these exact keys:
 {
   "hiringDecision": "Strong Hire" | "Hire" | "Lean Hire" | "Lean No Hire" | "No Hire",
   "overallScore": number (0 to 100),
-  "executiveSummary": "A concise 2-3 sentence hiring committee summary of the candidate's performance across full-stack Python, Django, React, SQL, and Gen AI.",
+  "executiveSummary": "A concise 2-3 sentence hiring committee summary of candidate performance against the 50 full stack & Gen AI technical concepts in simple, clear English.",
   "dimensions": [
     {
       "name": "Frontend Engineering (HTML, CSS, JS, React)",

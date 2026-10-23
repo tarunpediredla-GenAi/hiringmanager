@@ -11,6 +11,7 @@ import {
   Columns,
   Headphones,
   Lightbulb,
+  BookOpen,
 } from 'lucide-react';
 import { ChatMessage, EvaluationResult, InterviewStatus, LayoutMode, WhiteboardNode } from './types/interview';
 import { sendInterviewTurn, evaluateInterview } from './services/api';
@@ -23,6 +24,8 @@ import { EvaluationModal } from './components/EvaluationModal';
 import { SettingsModal } from './components/SettingsModal';
 import { SavedSessionsDrawer } from './components/SavedSessionsDrawer';
 import { TipsSidebar } from './components/TipsSidebar';
+import { QuestionSyllabusModal } from './components/QuestionSyllabusModal';
+import { INTERVIEW_50_QUESTIONS, InterviewQuestion } from './data/interviewQuestions';
 import { auth, onAuthStateChanged, User } from './firebase/config';
 import {
   loginWithGoogle,
@@ -38,61 +41,41 @@ const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: 'turn-1',
     role: 'alex',
-    text: "Hello! Welcome to the interview. I am Alex. Today we are talking about the Full Stack Python Developer with Gen AI role. To begin, please tell me simply about your experience with React, Django, SQL, and Gen AI.",
+    text: "Hello! Welcome to your mock interview. I am Alex, your AI interviewer powered by Google Gemini. I will guide you through our 50-question full-stack curriculum, listen closely to your answers, and actively correct any mistakes so you can master each concept. Let's begin: What is the difference between async and defer in HTML?",
     timestamp: '00:00',
-  },
-  {
-    id: 'turn-2',
-    role: 'candidate',
-    text: 'Hello Alex! I build full-stack web applications with React on the frontend and Django REST framework on the backend. I use PostgreSQL and SQL queries to save data, and I connect to AI models for document search and chatbot answers.',
-    timestamp: '00:08',
-  },
-  {
-    id: 'turn-3',
-    role: 'alex',
-    text: "That sounds great! Suppose a user uploads a PDF file on the React website. How does Django receive this file, save it in PostgreSQL, and use Gen AI to answer questions about it?",
-    timestamp: '00:15',
   },
 ];
 
 const INITIAL_NODES: WhiteboardNode[] = [
   {
     id: 'node-1',
-    label: 'React 19 SPA (HTML/CSS/JS)',
+    label: 'React Frontend (HTML/CSS/JS)',
     category: 'compute',
-    description: 'React frontend with Tailwind CSS, custom hooks, and Server-Sent Events (SSE) for real-time streaming LLM responses.',
+    description: 'React UI components styled with CSS and HTML5, using JavaScript fetch to communicate with Django REST APIs.',
     x: 0,
     y: 0,
   },
   {
     id: 'node-2',
-    label: 'Django REST API & Celery',
+    label: 'Django REST API (Python)',
     category: 'compute',
-    description: 'Django REST Framework (DRF) handling JWT auth, API endpoints, and Celery workers for async PDF parsing & embedding generation.',
+    description: 'Django views, serializers, and url routing in Python handling requests and business logic.',
     x: 0,
     y: 0,
   },
   {
     id: 'node-3',
-    label: 'PostgreSQL Database (SQL + pgvector)',
+    label: 'PostgreSQL Database (SQL)',
     category: 'storage',
-    description: 'Relational tables for users, documents, and chat history with pgvector HNSW index for sub-25ms semantic vector search.',
+    description: 'Relational SQL tables for users, questions, and responses managed via Django ORM models.',
     x: 0,
     y: 0,
   },
   {
     id: 'node-4',
-    label: 'Redis Cache & Celery Broker',
-    category: 'cache',
-    description: 'Message broker for async Celery task queues and semantic query caching (<5ms response time).',
-    x: 0,
-    y: 0,
-  },
-  {
-    id: 'node-5',
-    label: 'Gen AI & Embeddings Pipeline',
+    label: 'Gen AI Pipeline (Gemini API)',
     category: 'compute',
-    description: 'Google Gemini API for 768-dim embeddings, RAG context synthesis, and token streaming via Django Async views.',
+    description: 'Google Gemini AI called from Python Django backend to generate answers and stream them to React.',
     x: 0,
     y: 0,
   },
@@ -105,15 +88,20 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [voiceName, setVoiceName] = useState('Puck');
   const [autoSendSilenceMs, setAutoSendSilenceMs] = useState(2200);
-  const [scenario, setScenario] = useState('Full Stack Python Developer with Gen AI (React, Django, SQL, Gen AI)');
+  const [scenario, setScenario] = useState('Senior Full Stack Python Developer with Gen AI (HTML, CSS, JS, React, SQL, Django, Gen AI)');
   const [timerSeconds, setTimerSeconds] = useState(15);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
+
+  // 50-Question Master Syllabus State
+  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
+  const [currentQuestionId, setCurrentQuestionId] = useState<number>(1);
 
   // Whiteboard state
   const [whiteboardNodes, setWhiteboardNodes] = useState<WhiteboardNode[]>(INITIAL_NODES);
   const [architectureNotes, setArchitectureNotes] = useState(
-    '- Frontend: React 19, HTML5/CSS3, custom hooks, Server-Sent Events (SSE) for token streaming.\n- Backend: Python 3.12 + Django REST Framework (DRF), Celery + Redis for asynchronous PDF ingestion.\n- Database: PostgreSQL (SQL) with normalized schema, foreign keys, and pgvector extension for HNSW vector search.\n- Gen AI: 512-token chunking pipeline, Gemini embeddings, prompt templates with system guardrails, and streaming response delivery.'
+    '- Frontend: React, HTML5, CSS3, JavaScript (fetch/axios for API calls).\n- Backend: Python 3.12 + Django REST Framework (DRF) handling views and serializers.\n- Database: PostgreSQL (SQL) with relational tables, foreign keys, and Django ORM.\n- Gen AI: Google Gemini API integration in Python for intelligent answers and streaming responses.'
   );
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [isSharingWhiteboard, setIsSharingWhiteboard] = useState(false);
   const [sharedWhiteboardSuccess, setSharedWhiteboardSuccess] = useState(false);
 
@@ -266,7 +254,7 @@ export default function App() {
       setStatus('thinking');
 
       try {
-        const { reply } = await sendInterviewTurn(updatedHistory, scenario, whiteboardContextString);
+        const { reply, isCorrection } = await sendInterviewTurn(updatedHistory, scenario, whiteboardContextString);
 
         const replyTime = new Date((timerSeconds + 2) * 1000).toISOString().substr(14, 5);
         const alexMsg: ChatMessage = {
@@ -274,6 +262,7 @@ export default function App() {
           role: 'alex',
           text: reply,
           timestamp: replyTime,
+          isCorrection,
         };
 
         const finalHistory = [...updatedHistory, alexMsg];
@@ -360,6 +349,62 @@ export default function App() {
     }
   };
 
+  // Switch to the next topic question in the 50-Question Master Curriculum
+  const handleChangeQuestion = useCallback(() => {
+    stopAlexSpeaking();
+    const nextIdx = (questionIndex + 1) % INTERVIEW_50_QUESTIONS.length;
+    setQuestionIndex(nextIdx);
+    const nextQ = INTERVIEW_50_QUESTIONS[nextIdx];
+    setCurrentQuestionId(nextQ.id);
+    const nextTime = formatTimer(timerSeconds);
+    const spokenText = `Let's move to Question ${nextQ.id} on ${nextQ.category}: ${nextQ.question}`;
+    const alexMsg: ChatMessage = {
+      id: `alex-${Date.now()}`,
+      role: 'alex',
+      text: spokenText,
+      timestamp: nextTime,
+    };
+    setMessages((prev) => [...prev, alexMsg]);
+    if (!isMuted) {
+      setStatus('speaking');
+      speakAsAlex(spokenText, () => {
+        setStatus('listening');
+        startListening();
+      });
+    } else {
+      setStatus('idle');
+    }
+  }, [questionIndex, timerSeconds, isMuted, speakAsAlex, stopAlexSpeaking, startListening]);
+
+  // Select a specific question directly from the 50 Questions Syllabus modal
+  const handleSelectSyllabusQuestion = useCallback(
+    (q: InterviewQuestion) => {
+      stopAlexSpeaking();
+      setCurrentQuestionId(q.id);
+      const idx = INTERVIEW_50_QUESTIONS.findIndex((item) => item.id === q.id);
+      if (idx !== -1) setQuestionIndex(idx);
+      const nextTime = formatTimer(timerSeconds);
+      const spokenText = `Great! Let's practice Question ${q.id} on ${q.category}: ${q.question}`;
+      const alexMsg: ChatMessage = {
+        id: `alex-${Date.now()}`,
+        role: 'alex',
+        text: spokenText,
+        timestamp: nextTime,
+      };
+      setMessages((prev) => [...prev, alexMsg]);
+      if (!isMuted) {
+        setStatus('speaking');
+        speakAsAlex(spokenText, () => {
+          setStatus('listening');
+          startListening();
+        });
+      } else {
+        setStatus('idle');
+      }
+    },
+    [timerSeconds, isMuted, speakAsAlex, stopAlexSpeaking, startListening]
+  );
+
   // Trigger evaluation
   const handleConcludeInterview = async () => {
     setIsTimerRunning(false);
@@ -405,7 +450,9 @@ export default function App() {
     setStatus('idle');
   };
 
-  const latestAlexMessage = [...messages].reverse().find((m) => m.role === 'alex')?.text || '';
+  const latestAlexMsg = [...messages].reverse().find((m) => m.role === 'alex');
+  const latestAlexMessage = latestAlexMsg?.text || '';
+  const latestAlexIsCorrection = latestAlexMsg?.isCorrection;
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -417,10 +464,16 @@ export default function App() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-slate-100 text-sm tracking-wide">Alex Interview Studio</h1>
+              <h1 className="font-bold text-slate-100 text-sm tracking-wide flex items-center gap-1.5">
+                <span>Alex</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-purple-600/30 border border-indigo-500/40 text-indigo-300 font-medium flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-indigo-400" />
+                  Gemini AI
+                </span>
+              </h1>
               <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Voice Session
+                Live Voice & Auto-Correction
               </span>
             </div>
           </div>
@@ -471,6 +524,19 @@ export default function App() {
               <Layers className="h-4 w-4" />
             </button>
           </div>
+
+          {/* 50 Questions Master Curriculum Syllabus */}
+          <button
+            onClick={() => setIsSyllabusOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-500/50 text-indigo-200 hover:text-white transition font-medium cursor-pointer shadow-sm"
+            title="Browse all 50 official questions and canonical answers"
+          >
+            <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+            <span className="font-semibold">50 Questions</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-indigo-800 text-indigo-200 font-mono text-[10px]">
+              Syllabus
+            </span>
+          </button>
 
           {/* Transcript Drawer Toggle */}
           <button
@@ -622,12 +688,15 @@ export default function App() {
               status={status}
               alexAudioLevel={alexAudioLevel}
               latestMessage={latestAlexMessage}
+              isCorrection={latestAlexIsCorrection}
               isMuted={isMuted}
               onToggleMute={() => {
                 if (!isMuted) stopAlexSpeaking();
                 setIsMuted(!isMuted);
               }}
               onReplayAudio={handleReplayLatestAlex}
+              onChangeQuestion={handleChangeQuestion}
+              onOpenSyllabus={() => setIsSyllabusOpen(true)}
               voiceName={voiceName}
               onChangeVoice={setVoiceName}
               speechRate={speechRate}
@@ -660,12 +729,15 @@ export default function App() {
                   status={status}
                   alexAudioLevel={alexAudioLevel}
                   latestMessage={latestAlexMessage}
+                  isCorrection={latestAlexIsCorrection}
                   isMuted={isMuted}
                   onToggleMute={() => {
                     if (!isMuted) stopAlexSpeaking();
                     setIsMuted(!isMuted);
                   }}
                   onReplayAudio={handleReplayLatestAlex}
+                  onChangeQuestion={handleChangeQuestion}
+                  onOpenSyllabus={() => setIsSyllabusOpen(true)}
                   voiceName={voiceName}
                   onChangeVoice={setVoiceName}
                   speechRate={speechRate}
@@ -828,6 +900,15 @@ export default function App() {
         isOpen={isTipsOpen}
         onClose={() => setIsTipsOpen(false)}
         onInjectQuestion={(q) => handleCandidateSubmit(q)}
+      />
+
+      {/* 50 Questions Curriculum Syllabus Modal */}
+      <QuestionSyllabusModal
+        isOpen={isSyllabusOpen}
+        onClose={() => setIsSyllabusOpen(false)}
+        onSelectQuestion={handleSelectSyllabusQuestion}
+        messages={messages}
+        currentQuestionId={currentQuestionId}
       />
     </div>
   );

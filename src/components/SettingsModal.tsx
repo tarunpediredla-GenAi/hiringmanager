@@ -18,22 +18,22 @@ const SCENARIOS = [
   {
     id: 'fullstack-python-genai',
     title: 'Full Stack Python Developer with Gen AI (React, Django, SQL, Gen AI)',
-    description: 'End-to-end full stack architecture: React SPA, Django REST API, PostgreSQL/SQL with pgvector, Celery async workers, and streaming LLM responses.',
+    description: 'Core full stack interview: HTML/CSS/JS frontend with React, Python Django REST APIs, SQL database queries, and Generative AI integration.',
   },
   {
-    id: 'django-react-realtime',
-    title: 'Django REST Framework & React: Real-Time API Architecture',
-    description: 'RESTful endpoints, JWT auth, Server-Sent Events (SSE) streaming, optimistic UI updates, CORS, and Django ORM query optimization.',
+    id: 'react-frontend-focus',
+    title: 'React & Frontend Focus (HTML, CSS, JavaScript, React)',
+    description: 'React components, props, hooks, responsive CSS styling, and using JavaScript fetch/axios to call backend Django APIs.',
   },
   {
-    id: 'sql-pgvector-rag',
-    title: 'SQL Database Architecture & pgvector RAG Pipeline',
-    description: 'Relational data modeling, foreign key constraints, B-tree vs HNSW indexes, N+1 query elimination, and chunk embedding storage in PostgreSQL.',
+    id: 'django-sql-backend',
+    title: 'Django & SQL Database Focus (Python, Django REST, SQL)',
+    description: 'Django models, views, urls, serializers, relational SQL tables, foreign keys, and querying data with PostgreSQL.',
   },
   {
-    id: 'fullstack-leadership',
-    title: 'Full Stack Python Senior SWE: System Design & Trade-Offs',
-    description: 'Architecting scalable multi-tier web apps, Redis caching, Celery task distribution, rate limiting, and cost-effective Gen AI token management.',
+    id: 'genai-integration-focus',
+    title: 'Gen AI & Full Stack Connection (Python, Gemini API, React)',
+    description: 'Calling Google Gemini AI in Python Django backend, prompt handling, streaming tokens, and displaying AI answers in React.',
   },
 ];
 

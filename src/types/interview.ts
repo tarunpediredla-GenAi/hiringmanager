@@ -7,6 +7,7 @@ export interface ChatMessage {
   timestamp: string;
   audioUrl?: string;
   isStreaming?: boolean;
+  isCorrection?: boolean;
 }
 
 export interface WhiteboardNode {

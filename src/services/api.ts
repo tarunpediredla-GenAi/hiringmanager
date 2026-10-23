@@ -4,7 +4,7 @@ export async function sendInterviewTurn(
   messages: ChatMessage[],
   scenario: string,
   architectureContext?: string
-): Promise<{ reply: string }> {
+): Promise<{ reply: string; isCorrection?: boolean }> {
   const payload = {
     messages: messages.map((m) => ({ role: m.role, text: m.text })),
     scenario,
